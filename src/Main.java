@@ -1,170 +1,186 @@
+// Main.java
 // Created by Morgan Kaponga for Assignment10
 
 import javafx.application.Application;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
-import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.Priority;
 import javafx.stage.Stage;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
+import javafx.geometry.Insets;
 
-public class Main extends Application 
-{
-    private ToDoList currentList;
-    private VBox checkBoxDisplay;
-    private TextField taskNameInput;
-    private TextArea taskDescriptionInput;
+import java.io.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
-    public void updateCheckBoxDisplay()
-    {
-        checkBoxDisplay.getChildren().clear();
-        for (Task task : currentList) 
-        {
-            CheckBox checkBox = new CheckBox(task.getName());
-            checkBox.setSelected(task.isComplete());
+public class Main extends Application {
+    private static final String FILENAME = "Object.dat";
+    private List<Task> allTasks;
+    private DateTimeFormatter dtf = DateTimeFormatter.ISO_LOCAL_DATE;
+    private TabPane tabPane;
+    private LocalDate today;
 
-            Label descriptionLabel = new Label(task.toString());
-            checkBoxDisplay.getChildren().addAll(checkBox, descriptionLabel);
+    private TextField nameField;
+    private TextArea descField;
+    private DatePicker datePicker;
 
-            // Set the event handler for each checkbox
-            checkBox.setOnAction(new CheckBoxHandler(task, descriptionLabel));
-            VBox taskBox = new VBox(5, checkBox, descriptionLabel);
-
-        if (task.isComplete())// when the update the UI is called to update then it will check if its completed or not
-        {
-            Button deleteButton = new Button("Delete");
-            deleteButton.setOnAction(new ButtonClickHandler(task)); //calls the new class with the task at had so it can be deleted
-            taskBox.getChildren().add(deleteButton);
-        }
-
-        checkBoxDisplay.getChildren().add(taskBox);
-
-
-        }
+    public static void main(String[] args) {
+        launch();
     }
-
-    //when it gets called it will remove the class and update the UI again
-    class ButtonClickHandler implements EventHandler<ActionEvent> 
-    {
-        private Task taskToDelete;
-
-        public ButtonClickHandler(Task taskToDelete){
-            this.taskToDelete = taskToDelete;
-        }
-
-        public void handle(ActionEvent event){
-
-                    currentList.remove(taskToDelete);
-                    updateCheckBoxDisplay();
-                }
-            };
-
-
-
-    public ToDoList getSampleData()
-    {
-        ToDoList myList = new ToDoList();
-        Task myTask = new Task("Buy Groceries","eggs, bread, milk");
-        myTask.markComplete();
-        Task myOtherTask = new Task("Finish Assignment 9 in CS 67","I need to think of an idea for a subclass");
-        Task myThirdTask = new Task("Send resume to career services","send to get feedback before applying for interships");
-
-        myList.addTask(myTask);
-        myList.addTask(myOtherTask);
-        myList.addTask(myThirdTask);
-
-        return myList;
-    }
-    
 
     @Override
-    public void start(Stage stage) 
-    {
-        currentList = getSampleData();
-    
-        checkBoxDisplay = new VBox(10); // VBox with spacing between elements
-        // Add padding to the VBox (Insets are top, right, bottom, left)
-        checkBoxDisplay.setPadding(new Insets(10, 10, 10, 20)); // 20px padding on the left, 10px on the other sides
-        
-        updateCheckBoxDisplay();
-        ScrollPane scrollableCheckBoxDisplay = new ScrollPane(checkBoxDisplay);
-        
+    public void start(Stage stage) {
+        allTasks = loadOrSeedTasks();
+        today = LocalDate.now();
+        stage.setTitle("ToDo List - " + dtf.format(today));
 
-        // Create the input area at the bottom
-        taskNameInput = new TextField();
-        taskNameInput.setPromptText("Enter task name");
+        tabPane = new TabPane();
+        refreshTabs();
 
-        taskDescriptionInput = new TextArea();
-        taskDescriptionInput.setPromptText("Enter task description");
+        // Input area for adding and deleting
+        nameField = new TextField();
+        nameField.setPromptText("Task name");
+        descField = new TextArea();
+        descField.setPromptText("Description");
+        descField.setPrefRowCount(2);
+        datePicker = new DatePicker();
+        datePicker.setPromptText("Due date");
 
-        Button addButton = new Button("Add Task");
-        addButton.setOnAction(new AddTaskHandler());
+        Button addBtn = new Button("Add Task");
+        addBtn.setOnAction(e -> {
+            String name = nameField.getText().trim();
+            String desc = descField.getText().trim();
+            LocalDate date = datePicker.getValue();
+            if (!name.isEmpty() && date != null) {
+                Task t = new Task(name, desc, date.toString());
+                allTasks.add(t);
+                saveTasks();
+                refreshTabs();
+                nameField.clear(); descField.clear(); datePicker.setValue(null);
+            }
+        });
 
-        // Create a VBox for the input area
-        VBox inputArea = new VBox(5, taskNameInput, taskDescriptionInput, addButton);
-        inputArea.setPadding(new Insets(10, 10, 10, 20));
+        Button deleteBtn = new Button("Delete Completed");
+        deleteBtn.setOnAction(e -> {
+            allTasks.removeIf(Task::isComplete);
+            saveTasks();
+            refreshTabs();
+        });
 
-        // Create a root container that holds both the task list and the input area
-        VBox root = new VBox(scrollableCheckBoxDisplay,inputArea);
-        Scene scene = new Scene(root, 640, 480);
-        
+        HBox inputBox = new HBox(10, nameField, descField, datePicker, addBtn, deleteBtn);
+        inputBox.setPadding(new Insets(10));
+        HBox.setHgrow(nameField, Priority.ALWAYS);
+        HBox.setHgrow(descField, Priority.ALWAYS);
+        HBox.setHgrow(datePicker, Priority.NEVER);
+
+        BorderPane root = new BorderPane();
+        root.setCenter(tabPane);
+        root.setBottom(inputBox);
+
+        Scene scene = new Scene(root, 800, 600);
         stage.setScene(scene);
         stage.show();
     }
 
-    
-    public static void main(String[] args) 
-    {
-        launch();
+    private void refreshTabs() {
+        tabPane.getTabs().clear();
+        tabPane.getTabs().addAll(
+            createWeeklyTab("This Week", today),
+            createWeeklyTab("Next Week", today.plusWeeks(1)),
+            createOverdueTab("Overdue", today)
+        );
     }
 
-    private class CheckBoxHandler implements EventHandler<ActionEvent> 
-    {
-        private Task task;
-        private Label descriptionLabel;
+    private Tab createWeeklyTab(String title, LocalDate startDate) {
+        DateBasedWeeklyToDoList wlist = new DateBasedWeeklyToDoList(allTasks, startDate);
+        VBox vbox = new VBox(10);
+        vbox.setPadding(new Insets(10));
 
-        public CheckBoxHandler(Task task, Label descriptionLabel) 
-        {
-            this.task = task;
-            this.descriptionLabel = descriptionLabel;
-        }
+        for (Map.Entry<LocalDate, List<Task>> entry : wlist.getWeekMap().entrySet()) {
+            LocalDate date = entry.getKey();
+            Label dateLabel = new Label(dtf.format(date));
+            vbox.getChildren().add(dateLabel);
 
-        @Override
-        public void handle(ActionEvent event) 
-        {
-            CheckBox checkBox = (CheckBox) event.getSource();
-            if (checkBox.isSelected()) 
-            {
-                task.markComplete();
-                updateCheckBoxDisplay();//when the user checks it off the delete button will now appear
-            } else 
-            {
-                task.markIncomplete();
-                updateCheckBoxDisplay();//when the user checks it off the delete button will now appear
+            List<Task> tasksForDay = entry.getValue();
+            if (tasksForDay.isEmpty()) {
+                vbox.getChildren().add(new Label("  (no tasks)"));
+            } else {
+                for (Task t : tasksForDay) {
+                    CheckBox cb = new CheckBox(t.getName() + " (due " + dtf.format(t.getDate()) + ")");
+                    cb.setSelected(t.isComplete());
+                    cb.setOnAction(e -> {
+                        if (cb.isSelected()) t.markComplete(); else t.markIncomplete();
+                        saveTasks();
+                        refreshTabs();
+                    });
+                    vbox.getChildren().add(cb);
+                }
             }
-            // Update the label to reflect the task status
-            descriptionLabel.setText(task.toString());
-        }
-    }
-
-    private class AddTaskHandler implements EventHandler<ActionEvent>
-    {
-        @Override
-        public void handle(ActionEvent event) 
-        {
-            Task newTask = new Task(taskNameInput.getText(),taskDescriptionInput.getText());
-            currentList.add(newTask);
-            updateCheckBoxDisplay();
         }
 
+        ScrollPane sp = new ScrollPane(vbox);
+        Tab tab = new Tab(title, sp);
+        tab.setClosable(false);
+        return tab;
     }
 
+    private Tab createOverdueTab(String title, LocalDate todayDate) {
+        VBox vbox = new VBox(10);
+        vbox.setPadding(new Insets(10));
 
+        List<Task> overdue = DateBasedWeeklyToDoList.getOverdue(allTasks, todayDate);
+        if (overdue.isEmpty()) {
+            vbox.getChildren().add(new Label("(no overdue tasks)"));
+        } else {
+            for (Task t : overdue) {
+                CheckBox cb = new CheckBox(t.getName() + " (due " + dtf.format(t.getDate()) + ")");
+                cb.setSelected(t.isComplete());
+                cb.setOnAction(e -> {
+                    if (cb.isSelected()) t.markComplete(); else t.markIncomplete();
+                    saveTasks();
+                    refreshTabs();
+                });
+                vbox.getChildren().add(cb);
+            }
+        }
 
+        ScrollPane sp = new ScrollPane(vbox);
+        Tab tab = new Tab(title, sp);
+        tab.setClosable(false);
+        return tab;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Task> loadOrSeedTasks() {
+        File file = new File(FILENAME);
+        if (file.exists()) {
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+                return (List<Task>) ois.readObject();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        List<Task> sample = Arrays.asList(
+            new Task("Finish report", "Wrap up Q2 financials", "2025-05-01"),
+            new Task("Grocery shopping", "Buy ingredients for dinner", "2025-05-08"),
+            new Task("Email Prof", "Ask about midterm", "2025-04-28")
+        );
+        saveTasks(sample);
+        return new ArrayList<>(sample);
+    }
+
+    private void saveTasks() {
+        saveTasks(this.allTasks);
+    }
+
+    private void saveTasks(List<Task> tasksToSave) {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(FILENAME))) {
+            oos.writeObject(tasksToSave);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }
