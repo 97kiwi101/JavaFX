@@ -35,4 +35,3 @@ public class ToDoList extends ArrayList<String> {
         return tasks;
     }
 }
-

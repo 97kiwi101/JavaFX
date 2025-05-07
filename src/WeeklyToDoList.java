@@ -8,14 +8,14 @@ public class WeeklyToDoList implements Serializable {
 
     private ArrayList<ArrayList<Task>> weeklyTasks;
     private ArrayList<Task> listOfDailyTasks;
-    private ArrayList<String> days;
+    private ArrayList<LocalDate> days;
         // Constructor
         /**
          * Constructs a new WeeklyToDoList.
          * @param listOfDailyTasks the list of daily tasks
          * @param days the list of days
          */
-        public WeeklyToDoList(ArrayList<Task> listOfDailyTasks, ArrayList<String> days) {
+        public WeeklyToDoList(ArrayList<Task> listOfDailyTasks, ArrayList<LocalDate> days) {
             this.weeklyTasks = new ArrayList<>();
             this.days = days;
             this.listOfDailyTasks = listOfDailyTasks;
@@ -40,7 +40,7 @@ public class WeeklyToDoList implements Serializable {
          * @param listOfDailyTasks the list of daily tasks
          * @param days the list of days
          */
-        private void internalBuilder(ArrayList<Task> listOfDailyTasks, ArrayList<String> days) {
+        private void internalBuilder(ArrayList<Task> listOfDailyTasks, ArrayList<LocalDate> days) {
             this.weeklyTasks.clear();
 
             // Makes the week the size of the days list
@@ -71,7 +71,7 @@ public class WeeklyToDoList implements Serializable {
          * Returns the days.
          * @return the days
          */
-        public ArrayList<String> getDays() {
+        public ArrayList<LocalDate> getDays() {
             return days;
         }
 
@@ -89,7 +89,7 @@ public class WeeklyToDoList implements Serializable {
          * Sets the days and rebuilds the weekly to-do list.
          * @param days the days to set
          */
-        public void setDays(ArrayList<String> days) {
+        public void setDays(ArrayList<LocalDate> days) {
             this.days = days;
             internalBuilder(this.listOfDailyTasks, days);
         }
@@ -100,7 +100,7 @@ public class WeeklyToDoList implements Serializable {
          * @param day the day to check
          * @return the tasks due on the specified day
          */
-        public ArrayList<Task> whatsDueOnThisDay(String day) {
+        public ArrayList<Task> whatsDueOnThisDay(LocalDate day) {
             int index = days.indexOf(day);
             if (index != -1) {
                 return weeklyTasks.get(index);
@@ -127,7 +127,7 @@ public class WeeklyToDoList implements Serializable {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < days.size(); i++) {
-            String day = days.get(i);
+            LocalDate day = days.get(i);
             sb.append(day).append(":\n");
             ArrayList<Task> tasksForDay = weeklyTasks.get(i);
             if (tasksForDay.isEmpty()) {

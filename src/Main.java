@@ -15,7 +15,7 @@ import java.util.*;
 
 /**
  * Main JavaFX Application class for the ToDo List GUI.
- * <p>
+ * 
  * Provides tabs for viewing tasks due this week, next week, and overdue tasks.
  * Users can add new tasks, and delete completed tasks via the interface.
  */
@@ -82,7 +82,7 @@ public class Main extends Application {
             LocalDate date = datePicker.getValue();
             // Only add if name and date are provided
             if (!name.isEmpty() && date != null) {
-                Task t = new Task(name, desc, date.toString());
+                Task t = new Task(name, desc, date);
                 allTasks.add(t);
                 saveTasks();          // Persist updated list
                 refreshTabs();        // Refresh UI
@@ -131,7 +131,7 @@ public class Main extends Application {
      * Creates a tab showing tasks for a 7-day window starting at startDate.
      * Each task is represented by a CheckBox to mark completion.
      *
-     * @param title     the tab label
+     * @param title the tab label
      * @param startDate the first date of the week window
      * @return a non-closable Tab with tasks listed
      */
@@ -221,14 +221,7 @@ public class Main extends Application {
                 e.printStackTrace();
             }
         }
-        // Seed default tasks if no file found
-        List<Task> sample = Arrays.asList(
-            new Task("Finish report", "Wrap up Q2 financials", "2025-05-01"),
-            new Task("Grocery shopping", "Buy ingredients for dinner", "2025-05-08"),
-            new Task("Email Prof", "Ask about midterm", "2025-04-28")
-        );
-        saveTasks(sample);
-        return new ArrayList<>(sample);
+        return new ArrayList<>();
     }
 
     /**

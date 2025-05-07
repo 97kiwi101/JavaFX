@@ -9,18 +9,19 @@ public class Task implements Serializable {
     private LocalDate dueDate;
     private boolean complete;
 
-    /** 
-     * @param n   task name
-     * @param d   description
-     * @param dd  due date string in “yyyy-MM-dd”
+    /**
+     * Constructs a new Task.
+     *
+     * @param name        the task name
+     * @param description the task description
+     * @param dueDate     the due date as a LocalDate
      */
-    public Task(String n, String d, String dd) {
-        this.name = n;
-        this.description = d;
-        this.dueDate = LocalDate.parse(dd);
+    public Task(String name, String description, LocalDate dueDate) {
+        this.name = name;
+        this.description = description;
+        this.dueDate = dueDate;
         this.complete = false;
     }
-    
 
     @Override
     public String toString() {
@@ -28,9 +29,9 @@ public class Task implements Serializable {
     }
 
     // Getters
+
     /**
      * Returns the name of the task.
-     * @return the name of the task
      */
     public String getName() {
         return name;
@@ -38,7 +39,6 @@ public class Task implements Serializable {
 
     /**
      * Returns the description of the task.
-     * @return the description of the task
      */
     public String getDescription() {
         return description;
@@ -46,7 +46,6 @@ public class Task implements Serializable {
 
     /**
      * Returns the due date of the task.
-     * @return the due date of the task
      */
     public LocalDate getDate() {
         return dueDate;
@@ -54,16 +53,15 @@ public class Task implements Serializable {
 
     /**
      * Returns whether the task is complete.
-     * @return true if the task is complete, false otherwise
      */
     public boolean isComplete() {
         return complete;
     }
 
     // Setters
+
     /**
      * Sets the name of the task.
-     * @param name the new name of the task
      */
     public void setName(String name) {
         this.name = name;
@@ -71,7 +69,6 @@ public class Task implements Serializable {
 
     /**
      * Sets the description of the task.
-     * @param description the new description of the task
      */
     public void setDescription(String description) {
         this.description = description;
@@ -79,25 +76,18 @@ public class Task implements Serializable {
 
     /**
      * Sets the due date of the task.
-     * @param dueDate the new due date of the task
      */
     public void setDueDate(LocalDate dueDate) {
         this.dueDate = dueDate;
     }
 
-    /**
-     * Marks the task as complete.
-     */
+    /** Marks the task as complete. */
     public void markComplete() {
         complete = true;
     }
 
-    /**
-     * Marks the task as incomplete.
-     */
+    /** Marks the task as incomplete. */
     public void markIncomplete() {
         complete = false;
     }
-
-
 }
